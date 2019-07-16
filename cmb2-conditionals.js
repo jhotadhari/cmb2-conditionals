@@ -217,25 +217,41 @@ jQuery( document ).ready( function( $ ) {
 		var dependants = [];
 
 		if( typeof( fieldName ) !== "undefined" ) {
-		// Remove the empty [] at the end of a multi-check field.
-		fieldName = fieldName.replace( /\[\]$/, '' );
+			// Remove the empty [] at the end of a multi-check field.
+			fieldName = fieldName.replace( /\[\]$/, '' );
 
-		// Is there an element which is conditional on this element ?
-		// If a group element, within the group.
-		inGroup = elm.closest( '.cmb-repeatable-grouping' );
-		if ( 1 === inGroup.length ) {
-			iterator = elm.closest( '[data-iterator]' ).data( 'iterator' );
-			dependants = $( '[data-conditional-id]', inGroup ).filter( function() {
-				var conditionalId = $( this ).data( 'conditional-id' );
-				return ( Array.isArray( conditionalId ) && ( fieldName === conditionalId[0] + '[' + iterator + '][' + conditionalId[1] + ']' ) );
-			});
+			// Is there an element which is conditional on this element ?
+			// If a group element, within the group.
+			inGroup = elm.closest( '.cmb-repeatable-grouping' );
+			if ( 1 === inGroup.length ) {
+				iterator = elm.closest( '[data-iterator]' ).data( 'iterator' );
+				dependants = $( '[data-conditional-id]', inGroup ).filter( function() {
+					var conditionalId = $( this ).data( 'conditional-id' );
+					return ( Array.isArray( conditionalId ) && ( fieldName === conditionalId[0] + '[' + iterator + '][' + conditionalId[1] + ']' ) );
+				});
+			} else if ( $( 'body' ).hasClass( 'widgets-php' ) ) {
+				// If on widget screen,
+				// fieldName starts with cmbId followed by widgetIterator and fieldId in square brackets.
+				// Example a field named `image`: `widget-my_widget_slug[2][image]`.
+
+				// ??? !!! not tested for groups
+
+				// Check the last square brackets element
+				var match = fieldName.match( /\[[^\[\]]*\](?!\[[^\[\]]*\])/ );
+				if ( match && match.length > 0 ) {
+					// Get the fieldName, remove the square brackets.
+					fieldName = match[0].replace( /[\[\]]/g, '' );
+					// Set the context to the closest cmb2-wrap.
+					context = elm.closest( '.cmb2-wrap' );
+
+					dependants = $( '[data-conditional-id="' + fieldName + '"]', context );
+				}
+			} else {
+				// Else within the whole form.
+				dependants = $( '[data-conditional-id="' + fieldName + '"]', context );
+			}
 		}
 
-		// Else within the whole form.
-		else {
-			dependants = $( '[data-conditional-id="' + fieldName + '"]', context );
-		}
-		}
 		return dependants;
 	}
 
